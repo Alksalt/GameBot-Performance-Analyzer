@@ -1,8 +1,9 @@
-import pandas as pd
-import requests
-import os
 import datetime
 import json
+
+import pandas as pd
+import requests
+
 
 class TrueFalseGame:
     """
@@ -24,6 +25,10 @@ class TrueFalseGame:
         self.wrong_answers = 0
         self.your_answers = {}
         self.name = ''
+        self.max_streak = 0
+        self.attempts = 0
+        self.fixed_total = len(self.df)
+
 
         try:
             self.df2 = pd.read_csv("scores.csv")
@@ -119,11 +124,11 @@ class TrueFalseGame:
         """
         print('\n' + '='*55)
         print('Choose a difficulty level:')
-        print('  easy   = unlimited tries')
-        print('  medium = 3 wrong tries allowed')
-        print('  hard   = just 1 wrong try allowed')
+        print('easy   = 3 wrong tries allowed')
+        print('medium = 2 wrong tries allowed')
+        print('hard   = 1 wrong try  allowed')
         print('='*55)
-        lvls = {'easy': None, 'medium': 2, 'hard': 3}
+        lvls = {'easy': 3, 'medium': 2, 'hard': 1}
         diff = input('\nChoose between: easy/medium/hard: ').lower().strip()
         while diff not in ['easy', 'medium', 'hard']:
             print('\nYou have to choose between easy/medium/hard. Try again.')
@@ -161,6 +166,9 @@ class TrueFalseGame:
         self.score = 0
         self.wrong_answers = 0
         self.your_answers = {}
+        self.attempts = 0
+        self.max_streak = 0
+        self.fixed_total = len(self.df)
 
 
 
@@ -197,18 +205,21 @@ class TrueFalseGame:
         while True:
             if not self.play_game():
                 return
+            self.attempts = 0
+            self.max_streak = 0
 
             difficulty = self.dif()
             statements = self.generate_statements()
             game_over = False
+            current_streak = 0
 
             for st, true_value in statements:
+
                 # Check losing conditions BEFORE asking the question:
-                if (difficulty == 2 and self.wrong_answers >= 3) or \
-                        (difficulty == 3 and self.wrong_answers >= 1):
+                if self.wrong_answers >= difficulty:
                     game_over = True
                     break
-
+                self.attempts += 1
                 print('\n' + '=' * 40)
                 print(f'Question:\n{st}\n')
                 answer = input("Answer 'true' or 'false': ").lower().strip()
@@ -218,10 +229,16 @@ class TrueFalseGame:
                 # Process answer:
                 if answer == true_value:
                     self.score += 1
-                    print("\n✅ Correct! Your score is", self.score)
+                    current_streak += 1
+                    self.max_streak = max(self.max_streak, current_streak)
+                    print("\n✅ Correct! Your score is", self.score,
+                          f"\n Your current streak: {current_streak}")
+
                 else:
                     self.wrong_answers += 1
-                    print("\n❌ Wrong! Your score is", self.score)
+                    current_streak = 0
+                    print("\n❌ Wrong! Your score is", self.score,
+                          f"\n Your current streak: {current_streak}")
                 print('=' * 40)
                 self.your_answers[st] = answer
 
@@ -243,7 +260,8 @@ class TrueFalseGame:
                 print(f"Statement: {k}\nYour answer: {v}\n")
 
             self.table_score(self.name, self.score)
-            self.save_game_summary(completed)  # <-- Analytics call
+            total_questions = len(self.your_answers)
+            self.save_game_summary(completed, total_questions)  # <-- Analytics call
             print('*' * 55 + '\n')
 
             if not self.one_more():
@@ -257,20 +275,28 @@ class TrueFalseGame:
         """
         Save metrics from the current game into the CSV.
         """
-        total_questions = len(self.your_answers)
-        accuracy = round(self.score / total_questions, 2) if total_questions > 0 else 0
+        accuracy_fixed = round(self.score / self.fixed_total, 2)
+        accuracy_attempted = round(self.score / self.attempts, 2) if self.attempts else 0
         date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         new_entry = pd.DataFrame([[
             self.name,
             self.score,
             self.wrong_answers,
-            total_questions,
-            accuracy,
+            self.fixed_total,
+            self.attempts,
+            accuracy_fixed,
+            accuracy_attempted,
+            self.max_streak,
             self.difficulty_label,
             date,
             completed
         ]], columns=[
-            'Player', 'Score', 'Wrong', 'Total_questions', 'Accuracy', 'Difficulty', 'Date', 'Completed'
+            'Player', 'Score', 'Wrong',
+            'Fixed_total', 'Attempted',
+            'Accuracy_fixed', 'Accuracy_attempted',
+            'Max_streak',
+            'Difficulty', 'Date', 'Completed'
         ])
         try:
             summary_df = pd.read_csv("game_summary.csv")
