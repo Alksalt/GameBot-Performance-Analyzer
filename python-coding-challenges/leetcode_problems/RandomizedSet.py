@@ -43,16 +43,16 @@ class RandomizedSet:
             return False
 
     def remove(self, val: int) -> bool:
-        index = self.d.get(val, deque()).popleft()
-        if not index:
+        if val not in self.d or not self.d[val]:
             return False
-        else:
-            last_val = self.lst[-1]
-            self.lst[index], self.lst[-1] = last_val, self.lst[index]
-            self.lst.pop()
-            self.d[last_val].append(index)
-            self.d.pop(val)
-            return True
+        index = self.d.get(val, deque()).popleft()
+
+        last_val = self.lst[-1]
+        self.lst[index] =
+        self.lst.pop()
+        self.d[last_val].append(index)
+        self.d.pop(val)
+        return True
     def getRandom(self) -> int:
         return random.choice(self.lst)
 # Your RandomizedSet object will be instantiated and called as such:
