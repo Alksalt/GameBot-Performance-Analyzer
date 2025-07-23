@@ -1,6 +1,7 @@
 import random
 from collections import deque
-class RandomizedSet2:
+
+class RandomizedSet:
 
     def __init__(self):
         self.lst = []
@@ -27,7 +28,7 @@ class RandomizedSet2:
     def getRandom(self) -> int:
         return random.choice(self.lst)
 
-class RandomizedSet:
+class RandomizedCollection:
 
     def __init__(self):
         self.lst = []
@@ -45,14 +46,21 @@ class RandomizedSet:
     def remove(self, val: int) -> bool:
         if val not in self.d or not self.d[val]:
             return False
-        index = self.d.get(val, deque()).popleft()
-
+        index = self.d[val].popleft()
         last_val = self.lst[-1]
-        self.lst[index] =
+
+        if index != len(self.lst) - 1:
+
+            self.lst[index] = last_val
+
+            self.d[last_val].remove(len(self.lst) - 1)
+            self.d[last_val].append(index)
+
         self.lst.pop()
-        self.d[last_val].append(index)
-        self.d.pop(val)
+        if not self.d[val]:
+            del self.d[val]
         return True
+
     def getRandom(self) -> int:
         return random.choice(self.lst)
 # Your RandomizedSet object will be instantiated and called as such:
