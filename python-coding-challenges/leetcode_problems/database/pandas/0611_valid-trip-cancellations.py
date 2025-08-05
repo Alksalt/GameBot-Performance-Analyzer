@@ -83,7 +83,3 @@ if __name__ == "__main__":
     users = pd.DataFrame(users_data)
     pd.set_option('display.max_columns', None)
     print(trips_and_users(trips, users))
-    }
-    users = pd.DataFrame(users_data)
-    pd.set_option('display.max_columns', None)
-    print(trips_and_users(trips, users))
